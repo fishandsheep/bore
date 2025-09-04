@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>bore Web GUI - TCP隧道服务</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 0;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            background: #f8f9fa;
+            border: none;
+            font-size: 16px;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+        }
+
+        .tab.active:hover {
+            background: white;
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        input:invalid {
+            border-color: #dc3545;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #dc3545;
+            color: white;
+            flex: 1;
+        }
+
+        .btn-secondary:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+        }
+
+        .btn-secondary:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .connections {
+            margin-top: 30px;
+        }
+
+        .connection-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .connection-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .connection-id {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .connection-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .status-running {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-stopped {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .connection-details {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .log-container {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            margin-top: 30px;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 4px 0;
+        }
+
+        .log-timestamp {
+            color: #a0aec0;
+            margin-right: 10px;
+        }
+
+        .log-info {
+            color: #63b3ed;
+        }
+
+        .log-success {
+            color: #68d391;
+        }
+
+        .log-error {
+            color: #fc8181;
+        }
+
+        .port-range {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .help-text {
+            font-size: 14px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification.success {
+            background: #28a745;
+        }
+
+        .notification.error {
+            background: #dc3545;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .tab {
+                padding: 15px 10px;
+                font-size: 14px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .connection-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>bore Web GUI</h1>
+            <p class="subtitle">简单易用的TCP隧道服务</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('client')">客户端模式</button>
+            <button class="tab" onclick="switchTab('server')">服务器模式</button>
+        </div>
+
+        <div id="client-tab" class="tab-content active">
+            <h2>客户端配置</h2>
+            <form id="client-form">
+                <div class="form-group">
+                    <label for="client-local-host">本地主机</label>
+                    <input type="text" id="client-local-host" value="localhost" required>
+                    <p class="help-text">要暴露的本地服务地址</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="client-local-port">本地端口</label>
+                    <input type="number" id="client-local-port" min="1" max="65535" value="8000" required>
+                    <p class="help-text">要暴露的本地服务端口</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="client-to">服务器地址</label>
+                    <input type="text" id="client-to" value="bore.pub" required>
+                    <p class="help-text">远程bore服务器地址</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="client-port">远程端口（0=自动分配）</label>
+                    <input type="number" id="client-port" min="0" max="65535" value="0" required>
+                    <p class="help-text">在远程服务器上使用的端口，设为0自动分配</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="client-secret">认证密钥（可选）</label>
+                    <input type="password" id="client-secret" placeholder="留空表示不需要认证">
+                    <p class="help-text">用于连接认证的密钥</p>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn-primary" id="client-start-btn">
+                        <span id="client-start-text">启动客户端</span>
+                    </button>
+                    <button type="button" class="btn-secondary" id="client-stop-btn" disabled>
+                        停止客户端
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="server-tab" class="tab-content">
+            <h2>服务器配置</h2>
+            <form id="server-form">
+                <div class="form-group">
+                    <label>端口范围</label>
+                    <div class="port-range">
+                        <input type="number" id="server-min-port" min="1" max="65535" value="1024" required>
+                        <span>至</span>
+                        <input type="number" id="server-max-port" min="1" max="65535" value="65535" required>
+                    </div>
+                    <p class="help-text">可分配给客户端的端口范围</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="server-bind-addr">绑定地址</label>
+                    <input type="text" id="server-bind-addr" value="0.0.0.0" required>
+                    <p class="help-text">服务器监听的IP地址</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="server-bind-tunnels">隧道监听地址（可选）</label>
+                    <input type="text" id="server-bind-tunnels" placeholder="默认与绑定地址相同">
+                    <p class="help-text">隧道连接监听的IP地址</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="server-secret">认证密钥（可选）</label>
+                    <input type="password" id="server-secret" placeholder="留空表示不需要认证">
+                    <p class="help-text">客户端连接所需的认证密钥</p>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn-primary" id="server-start-btn">
+                        <span id="server-start-text">启动服务器</span>
+                    </button>
+                    <button type="button" class="btn-secondary" id="server-stop-btn" disabled>
+                        停止服务器
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="connections">
+            <h3>活动连接</h3>
+            <div id="connections-list">
+                <p style="color: #6c757d; text-align: center; padding: 20px;">暂无活动连接</p>
+            </div>
+        </div>
+
+        <div class="log-container" id="log">
+            <div class="log-entry">
+                <span class="log-timestamp">[系统]</span>
+                <span class="log-info">Web GUI已就绪，等待连接...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let currentClient = null;
+        let currentServer = null;
+        let connections = new Map();
+
+        function initWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = () => {
+                addLog('WebSocket连接已建立', 'success');
+            };
+            
+            ws.onmessage = (event) => {
+                const msg = JSON.parse(event.data);
+                handleMessage(msg);
+            };
+            
+            ws.onclose = () => {
+                addLog('WebSocket连接已断开，尝试重连...', 'error');
+                setTimeout(initWebSocket, 3000);
+            };
+            
+            ws.onerror = (error) => {
+                addLog('WebSocket错误: ' + error, 'error');
+            };
+        }
+
+        function handleMessage(msg) {
+            switch (msg.msg_type) {
+                case 'client_started':
+                    handleClientStarted(msg.data);
+                    break;
+                case 'client_stopped':
+                    handleClientStopped(msg.data);
+                    break;
+                case 'client_port_assigned':
+                    handleClientPortAssigned(msg.data);
+                    break;
+                case 'client_log':
+                    handleClientLog(msg.data);
+                    break;
+                case 'client_exited':
+                    handleClientExited(msg.data);
+                    break;
+                case 'server_started':
+                    handleServerStarted(msg.data);
+                    break;
+                case 'server_stopped':
+                    handleServerStopped(msg.data);
+                    break;
+                case 'server_log':
+                    handleServerLog(msg.data);
+                    break;
+                case 'server_exited':
+                    handleServerExited(msg.data);
+                    break;
+                case 'pong':
+                    // Keep-alive response
+                    break;
+            }
+        }
+
+        function handleClientStarted(data) {
+            currentClient = data.id;
+            connections.set(data.id, {
+                type: 'client',
+                config: data.config,
+                status: 'running'
+            });
+            
+            document.getElementById('client-start-btn').disabled = true;
+            document.getElementById('client-stop-btn').disabled = false;
+            
+            addLog(`客户端已启动 (ID: ${data.id})`, 'success');
+            addLog(`本地: ${data.config.local_host}:${data.config.local_port}`, 'info');
+            addLog(`远程: ${data.config.to}:${data.config.port || '自动'}`, 'info');
+            
+            updateConnectionsList();
+            showNotification('客户端启动成功', 'success');
+        }
+
+        function handleClientStopped(data) {
+            if (currentClient === data.id) {
+                currentClient = null;
+                document.getElementById('client-start-btn').disabled = false;
+                document.getElementById('client-stop-btn').disabled = true;
+            }
+            
+            connections.delete(data.id);
+            addLog(`客户端已停止 (ID: ${data.id})`, 'info');
+            updateConnectionsList();
+            showNotification('客户端已停止', 'success');
+        }
+
+        function handleClientPortAssigned(data) {
+            const conn = connections.get(data.id);
+            if (conn) {
+                conn.remote_port = data.remote_port;
+                conn.full_address = data.full_address;
+                addLog(`远程端口已分配: ${data.full_address}`, 'success');
+                updateConnectionsList();
+            }
+        }
+
+        function handleClientLog(data) {
+            const logClass = data.is_error ? 'error' : 'info';
+            const line = data.line;
+            
+            // Add log entry
+            addLog(`客户端 [${data.id}]: ${line}`, logClass);
+            
+            // Check for common errors
+            if (line.includes('Address already in use') && line.includes('local_port')) {
+                showNotification('本地端口已被占用，请使用其他端口', 'error');
+                // Re-enable start button if this is the current client
+                if (currentClient === data.id) {
+                    document.getElementById('client-start-btn').disabled = false;
+                    document.getElementById('client-stop-btn').disabled = true;
+                }
+            } else if (line.includes('Connection refused')) {
+                showNotification('无法连接到服务器，请检查服务器地址', 'error');
+            } else if (line.includes('authentication failed')) {
+                showNotification('认证失败，请检查密钥', 'error');
+            }
+        }
+
+        function handleClientExited(data) {
+            if (currentClient === data.id) {
+                currentClient = null;
+                document.getElementById('client-start-btn').disabled = false;
+                document.getElementById('client-stop-btn').disabled = true;
+            }
+            
+            connections.delete(data.id);
+            addLog(`客户端已退出 (ID: ${data.id})`, 'info');
+            updateConnectionsList();
+        }
+
+        function handleServerStarted(data) {
+            currentServer = data.id;
+            connections.set(data.id, {
+                type: 'server',
+                config: data.config,
+                status: 'running'
+            });
+            
+            document.getElementById('server-start-btn').disabled = true;
+            document.getElementById('server-stop-btn').disabled = false;
+            
+            addLog(`服务器已启动 (ID: ${data.id})`, 'success');
+            addLog(`端口范围: ${data.config.min_port}-${data.config.max_port}`, 'info');
+            addLog(`绑定地址: ${data.config.bind_addr}`, 'info');
+            
+            updateConnectionsList();
+            showNotification('服务器启动成功', 'success');
+        }
+
+        function handleServerStopped(data) {
+            if (currentServer === data.id) {
+                currentServer = null;
+                document.getElementById('server-start-btn').disabled = false;
+                document.getElementById('server-stop-btn').disabled = true;
+            }
+            
+            connections.delete(data.id);
+            addLog(`服务器已停止 (ID: ${data.id})`, 'info');
+            updateConnectionsList();
+            showNotification('服务器已停止', 'success');
+        }
+
+        function handleServerLog(data) {
+            const logClass = data.is_error ? 'error' : 'info';
+            addLog(`服务器 [${data.id}]: ${data.line}`, logClass);
+        }
+
+        function handleServerExited(data) {
+            if (currentServer === data.id) {
+                currentServer = null;
+                document.getElementById('server-start-btn').disabled = false;
+                document.getElementById('server-stop-btn').disabled = true;
+            }
+            
+            connections.delete(data.id);
+            addLog(`服务器已退出 (ID: ${data.id})`, 'info');
+            updateConnectionsList();
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`${tab}-tab`).classList.add('active');
+        }
+
+        async function startClient(e) {
+            e.preventDefault();
+            
+            const config = {
+                local_host: document.getElementById('client-local-host').value,
+                local_port: parseInt(document.getElementById('client-local-port').value),
+                to: document.getElementById('client-to').value,
+                port: parseInt(document.getElementById('client-port').value),
+                secret: document.getElementById('client-secret').value || null
+            };
+            
+            try {
+                const response = await fetch('/api/client/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const result = await response.json();
+                addLog(`启动客户端请求已发送，ID: ${result.id}`, 'info');
+            } catch (error) {
+                addLog(`启动客户端失败: ${error.message}`, 'error');
+                showNotification('启动失败: ' + error.message, 'error');
+            }
+        }
+
+        async function stopClient() {
+            if (!currentClient) return;
+            
+            try {
+                const response = await fetch(`/api/client/stop/${currentClient}`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                addLog('停止客户端请求已发送', 'info');
+            } catch (error) {
+                addLog(`停止客户端失败: ${error.message}`, 'error');
+                showNotification('停止失败: ' + error.message, 'error');
+            }
+        }
+
+        async function startServer(e) {
+            e.preventDefault();
+            
+            const config = {
+                min_port: parseInt(document.getElementById('server-min-port').value),
+                max_port: parseInt(document.getElementById('server-max-port').value),
+                bind_addr: document.getElementById('server-bind-addr').value,
+                bind_tunnels: document.getElementById('server-bind-tunnels').value || null,
+                secret: document.getElementById('server-secret').value || null
+            };
+            
+            try {
+                const response = await fetch('/api/server/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const result = await response.json();
+                addLog(`启动服务器请求已发送，ID: ${result.id}`, 'info');
+            } catch (error) {
+                addLog(`启动服务器失败: ${error.message}`, 'error');
+                showNotification('启动失败: ' + error.message, 'error');
+            }
+        }
+
+        async function stopServer() {
+            if (!currentServer) return;
+            
+            try {
+                const response = await fetch(`/api/server/stop/${currentServer}`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                addLog('停止服务器请求已发送', 'info');
+            } catch (error) {
+                addLog(`停止服务器失败: ${error.message}`, 'error');
+                showNotification('停止失败: ' + error.message, 'error');
+            }
+        }
+
+        function updateConnectionsList() {
+            const list = document.getElementById('connections-list');
+            
+            if (connections.size === 0) {
+                list.innerHTML = '<p style="color: #6c757d; text-align: center; padding: 20px;">暂无活动连接</p>';
+                return;
+            }
+            
+            let html = '';
+            for (const [id, conn] of connections) {
+                html += `
+                    <div class="connection-item">
+                        <div class="connection-header">
+                            <span class="connection-id">${conn.type === 'client' ? '客户端' : '服务器'} - ${id.slice(0, 8)}</span>
+                            <span class="connection-status ${conn.status === 'running' ? 'status-running' : 'status-stopped'}">
+                                ${conn.status === 'running' ? '运行中' : '已停止'}
+                            </span>
+                        </div>
+                        <div class="connection-details">
+                            ${conn.type === 'client' ? 
+                                `本地: ${conn.config.local_host}:${conn.config.local_port}<br>
+                                 远程: ${conn.full_address || (conn.config.to + ':' + (conn.config.port || '自动'))}` :
+                                `端口范围: ${conn.config.min_port}-${conn.config.max_port}<br>
+                                 绑定地址: ${conn.config.bind_addr}`
+                            }
+                        </div>
+                    </div>
+                `;
+            }
+            
+            list.innerHTML = html;
+        }
+
+        function addLog(message, type = 'info') {
+            const log = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            
+            const timestamp = new Date().toLocaleTimeString('zh-CN');
+            let className = 'log-info';
+            if (type === 'success') className = 'log-success';
+            if (type === 'error') className = 'log-error';
+            
+            entry.innerHTML = `
+                <span class="log-timestamp">[${timestamp}]</span>
+                <span class="${className}">${message}</span>
+            `;
+            
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // 事件监听
+        document.getElementById('client-form').addEventListener('submit', startClient);
+        document.getElementById('client-stop-btn').addEventListener('click', stopClient);
+        document.getElementById('server-form').addEventListener('submit', startServer);
+        document.getElementById('server-stop-btn').addEventListener('click', stopServer);
+
+        // 保持WebSocket连接活跃
+        setInterval(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ msg_type: 'ping' }));
+            }
+        }, 30000);
+
+        // 初始化
+        initWebSocket();
+    </script>
+</body>
+</html>
