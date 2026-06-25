@@ -20,10 +20,20 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Check tag and package versions
         run: npm run npm:check
+
+  create-release:
+    name: Create GitHub release
+    runs-on: ubuntu-latest
+    needs: check-version
+    steps:
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1 || gh release create "${GITHUB_REF_NAME}" --title "${GITHUB_REF_NAME}" --verify-tag
 
   # This job downloads and stores `cross` as an artifact, so that it can be
   # redownloaded across all of the jobs. Currently this copied pasted between
@@ -54,7 +64,7 @@ jobs:
 
   macos:
     runs-on: macos-latest
-    needs: check-version
+    needs: create-release
     strategy:
       matrix:
         target:
@@ -62,10 +72,6 @@ jobs:
           - x86_64-apple-darwin
           - aarch64-apple-darwin
     steps:
-      - name: Get tag
-        id: tag
-        uses: dawidd6/action-get-tag@v1
-
       - name: Setup | Checkout
         uses: actions/checkout@v4
 
@@ -92,26 +98,17 @@ jobs:
           command: build
           args: --release --target ${{ matrix.target }}
 
-      - run: tar -czvf ${{ env.BIN }}.tar.gz --directory=target/${{ matrix.target }}/release ${{ env.BIN }}
-      - uses: XAMPPRocky/create-release@v1.0.2
-        id: create_release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
-          draft: false
-          prerelease: false
+      - run: tar -czvf "${{ env.BIN }}-${GITHUB_REF_NAME}-${{ matrix.target }}.tar.gz" --directory=target/${{ matrix.target }}/release ${{ env.BIN }}
 
       - name: Upload Release Asset
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${GITHUB_REF_NAME}" "${{ env.BIN }}.tar.gz#${{ env.BIN }}-${{ steps.tag.outputs.tag }}-${{ matrix.target }}.tar.gz" --clobber
+        run: gh release upload "${GITHUB_REF_NAME}" "${{ env.BIN }}-${GITHUB_REF_NAME}-${{ matrix.target }}.tar.gz" --clobber
 
   linux:
     runs-on: ubuntu-latest
     needs:
-      - check-version
+      - create-release
       - install-cross
     strategy:
       matrix:
@@ -124,10 +121,6 @@ jobs:
           - i686-unknown-linux-musl
           - x86_64-unknown-linux-musl
     steps:
-      - name: Get tag
-        id: tag
-        uses: dawidd6/action-get-tag@v1
-
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
@@ -137,27 +130,17 @@ jobs:
 
       - run: ci/set_rust_version.bash stable ${{ matrix.target }}
       - run: ci/build.bash /tmp/cross ${{ matrix.target }} RELEASE
-      - run: tar -czvf ${{ env.BIN }}.tar.gz --directory=target/${{ matrix.target }}/release ${{ env.BIN }}
-
-      - uses: XAMPPRocky/create-release@v1.0.2
-        id: create_release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
-          draft: false
-          prerelease: false
+      - run: tar -czvf "${{ env.BIN }}-${GITHUB_REF_NAME}-${{ matrix.target }}.tar.gz" --directory=target/${{ matrix.target }}/release ${{ env.BIN }}
 
       - name: Upload Release Asset
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${GITHUB_REF_NAME}" "${{ env.BIN }}.tar.gz#${{ env.BIN }}-${{ steps.tag.outputs.tag }}-${{ matrix.target }}.tar.gz" --clobber
+        run: gh release upload "${GITHUB_REF_NAME}" "${{ env.BIN }}-${GITHUB_REF_NAME}-${{ matrix.target }}.tar.gz" --clobber
 
   windows:
     runs-on: windows-latest
     needs:
-      - check-version
+      - create-release
       - install-cross
     strategy:
       matrix:
@@ -169,35 +152,19 @@ jobs:
           # - i686-pc-windows-gnu
           # - x86_64-pc-windows-gnu
     steps:
-      - name: Get tag
-        id: tag
-        uses: dawidd6/action-get-tag@v1
-
       - uses: actions/checkout@v4
       - run: bash ci/set_rust_version.bash stable ${{ matrix.target }}
       - run: bash ci/build.bash cargo ${{ matrix.target }} RELEASE
       - run: |
           cd ./target/${{ matrix.target }}/release/
-          7z a "${{ env.BIN }}.zip" "${{ env.BIN }}.exe"
-          mv "${{ env.BIN }}.zip" $GITHUB_WORKSPACE
+          7z a "${{ env.BIN }}-${GITHUB_REF_NAME}-${{ matrix.target }}.zip" "${{ env.BIN }}.exe"
+          mv "${{ env.BIN }}-${GITHUB_REF_NAME}-${{ matrix.target }}.zip" $GITHUB_WORKSPACE
         shell: bash
-        # We're using using a fork of `actions/create-release` that detects
-        # whether a release is already available or not first.
-      - uses: XAMPPRocky/create-release@v1.0.2
-        id: create_release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
-          # Draft should **always** be false. GitHub doesn't provide a way to
-          # get draft releases from its API, so there's no point using it.
-          draft: false
-          prerelease: false
+
       - name: Upload Release Asset
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${GITHUB_REF_NAME}" "${{ env.BIN }}.zip#${{ env.BIN }}-${{ steps.tag.outputs.tag }}-${{ matrix.target }}.zip" --clobber
+        run: gh release upload "${GITHUB_REF_NAME}" "${{ env.BIN }}-${GITHUB_REF_NAME}-${{ matrix.target }}.zip" --clobber
         shell: bash
 
   npm:
@@ -217,7 +184,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           registry-url: https://registry.npmjs.org
 
       - name: Check versions
