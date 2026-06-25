@@ -9,6 +9,8 @@
 
 ## Recent Updates
 
+- Added a built-in web console: `bore --web` / `bore -w` manages `local` tunnels in a browser.
+- The web console now updates tunnel cards incrementally; expanded logs poll independently without repainting the whole Tunnels section.
 - npm distribution is available through `@qinshower/bore`, with platform-specific optional packages.
 - Release scripts now prepare and publish npm packages from local package paths.
 - End-to-end tests now wait for the control port to be released and stop the server after each case.
@@ -65,6 +67,44 @@ Expose a different local host:
 ```sh
 bore local 8080 --local-host 192.168.1.10 --to bore.pub
 ```
+
+## Web Console
+
+Start the local web console:
+
+```sh
+bore --web
+bore -w
+```
+
+Default listen address:
+
+```text
+127.0.0.1:7836
+```
+
+Use a custom listen address:
+
+```sh
+bore --web --web-addr 127.0.0.1:9000
+```
+
+This first version can:
+
+- Create `local` tunnel configs
+- Start and stop `local` tunnels
+- Show tunnel status
+- Show recent logs
+- Delete stopped or failed tunnel configs
+
+Current interaction details:
+
+- The `Tunnels` list patches cards in place, so polling no longer refreshes the whole section visually
+- State polling runs only for active tunnels; when only logs are expanded, the UI refreshes log output only
+- Delete uses a consistent confirmation dialog
+- Per-tunnel actions enter a busy state to prevent duplicate clicks and concurrent requests
+
+Warning: this version has no login or authentication. Binding to a non-loopback address prints a security warning at startup.
 
 ## Self-hosting
 

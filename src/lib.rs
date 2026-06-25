@@ -16,6 +16,10 @@
 #![warn(missing_docs)]
 
 pub mod auth;
+/// CLI argument parsing and command dispatch.
+pub mod cli;
 pub mod client;
 pub mod server;
 pub mod shared;
+/// Local web console for managing client tunnels.
+pub mod web;

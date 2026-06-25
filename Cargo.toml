@@ -17,6 +17,7 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = { version = "1.0.102", features = ["backtrace"] }
+axum = "0.7.9"
 clap = { version = "4.6.1", features = ["derive", "env"] }
 dashmap = "6.2.1"
 fastrand = "2.4.1"
@@ -26,7 +27,8 @@ hmac = "0.13.0"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"
 sha2 = "0.11.0"
-tokio = { version = "1.52.3", features = ["rt-multi-thread", "io-util", "macros", "net", "time"] }
+time = { version = "0.3.44", features = ["formatting"] }
+tokio = { version = "1.52.3", features = ["rt-multi-thread", "io-util", "macros", "net", "sync", "time"] }
 tokio-util = { version = "0.7.18", features = ["codec"] }
 tracing = "0.1.44"
 tracing-subscriber = "0.3.23"
@@ -35,3 +37,4 @@ uuid = { version = "1.23.4", features = ["serde", "v4"] }
 [dev-dependencies]
 rstest = "0.26.1"
 tokio = { version = "1.52.3", features = ["sync"] }
+tower = "0.5.2"
