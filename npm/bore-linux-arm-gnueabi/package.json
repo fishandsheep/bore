@@ -1,0 +1,25 @@
+{
+  "name": "@qinshower/bore-linux-arm-gnueabi",
+  "version": "0.6.0",
+  "description": "The Linux arm GNU EABI binary for bore.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ekzhang/bore.git"
+  },
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "arm"
+  ],
+  "bin": {
+    "bore": "bin/bore"
+  },
+  "files": [
+    "bin"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

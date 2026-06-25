@@ -1,0 +1,40 @@
+{
+  "name": "@qinshower/bore",
+  "version": "0.6.0",
+  "description": "A modern, simple TCP tunnel in Rust that exposes local ports to a remote server.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ekzhang/bore.git"
+  },
+  "homepage": "https://github.com/ekzhang/bore",
+  "bugs": {
+    "url": "https://github.com/ekzhang/bore/issues"
+  },
+  "bin": {
+    "bore": "bin/bore.js"
+  },
+  "files": [
+    "bin",
+    "README.md"
+  ],
+  "optionalDependencies": {
+    "@qinshower/bore-darwin-arm64": "0.6.0",
+    "@qinshower/bore-darwin-x64": "0.6.0",
+    "@qinshower/bore-linux-arm-gnueabi": "0.6.0",
+    "@qinshower/bore-linux-arm-musleabi": "0.6.0",
+    "@qinshower/bore-linux-arm64-musl": "0.6.0",
+    "@qinshower/bore-linux-armv7-gnueabihf": "0.6.0",
+    "@qinshower/bore-linux-armv7-musleabihf": "0.6.0",
+    "@qinshower/bore-linux-ia32-musl": "0.6.0",
+    "@qinshower/bore-linux-x64-musl": "0.6.0",
+    "@qinshower/bore-win32-ia32-msvc": "0.6.0",
+    "@qinshower/bore-win32-x64-msvc": "0.6.0"
+  },
+  "engines": {
+    "node": ">=14"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

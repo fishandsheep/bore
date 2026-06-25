@@ -1,0 +1,25 @@
+{
+  "name": "@qinshower/bore-linux-x64-musl",
+  "version": "0.6.0",
+  "description": "The Linux x64 musl binary for bore.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ekzhang/bore.git"
+  },
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "bin": {
+    "bore": "bin/bore"
+  },
+  "files": [
+    "bin"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

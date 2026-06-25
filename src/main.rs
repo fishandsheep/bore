@@ -5,9 +5,9 @@ use bore_cli::{client::Client, server::Server};
 use clap::{error::ErrorKind, CommandFactory, Parser, Subcommand};
 
 #[derive(Parser, Debug)]
-#[clap(author, version, about)]
+#[command(author, version, about)]
 struct Args {
-    #[clap(subcommand)]
+    #[command(subcommand)]
     command: Command,
 }
 
@@ -16,46 +16,46 @@ enum Command {
     /// Starts a local proxy to the remote server.
     Local {
         /// The local port to expose.
-        #[clap(env = "BORE_LOCAL_PORT")]
+        #[arg(env = "BORE_LOCAL_PORT")]
         local_port: u16,
 
         /// The local host to expose.
-        #[clap(short, long, value_name = "HOST", default_value = "localhost")]
+        #[arg(short, long, value_name = "HOST", default_value = "localhost")]
         local_host: String,
 
         /// Address of the remote server to expose local ports to.
-        #[clap(short, long, env = "BORE_SERVER")]
+        #[arg(short, long, env = "BORE_SERVER")]
         to: String,
 
         /// Optional port on the remote server to select.
-        #[clap(short, long, default_value_t = 0)]
+        #[arg(short, long, default_value_t = 0)]
         port: u16,
 
         /// Optional secret for authentication.
-        #[clap(short, long, env = "BORE_SECRET", hide_env_values = true)]
+        #[arg(short, long, env = "BORE_SECRET", hide_env_values = true)]
         secret: Option<String>,
     },
 
     /// Runs the remote proxy server.
     Server {
         /// Minimum accepted TCP port number.
-        #[clap(long, default_value_t = 1024, env = "BORE_MIN_PORT")]
+        #[arg(long, default_value_t = 1024, env = "BORE_MIN_PORT")]
         min_port: u16,
 
         /// Maximum accepted TCP port number.
-        #[clap(long, default_value_t = 65535, env = "BORE_MAX_PORT")]
+        #[arg(long, default_value_t = 65535, env = "BORE_MAX_PORT")]
         max_port: u16,
 
         /// Optional secret for authentication.
-        #[clap(short, long, env = "BORE_SECRET", hide_env_values = true)]
+        #[arg(short, long, env = "BORE_SECRET", hide_env_values = true)]
         secret: Option<String>,
 
         /// IP address to bind to, clients must reach this.
-        #[clap(long, default_value = "0.0.0.0")]
+        #[arg(long, default_value = "0.0.0.0")]
         bind_addr: IpAddr,
 
         /// IP address where tunnels will listen on, defaults to --bind-addr.
-        #[clap(long)]
+        #[arg(long)]
         bind_tunnels: Option<IpAddr>,
     },
 }

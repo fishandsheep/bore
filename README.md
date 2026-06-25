@@ -55,6 +55,21 @@ sudo emerge net-proxy/bore
 
 Otherwise, the easiest way to install bore is from prebuilt binaries. These are available on the [releases page](https://github.com/ekzhang/bore/releases) for macOS, Windows, and Linux. Just unzip the appropriate file for your platform and move the `bore` executable into a folder on your PATH.
 
+### npx / bunx
+
+You can also run `bore` through npm-compatible package runners. This installs the prebuilt binary for your platform.
+
+```shell
+npx @qinshower/bore local 8000 --to bore.pub
+bunx @qinshower/bore local 8000 --to bore.pub
+```
+
+Pinned versions are supported through npm semver.
+
+```shell
+npx @qinshower/bore@0.6.0 --help
+```
+
 ### Cargo
 
 You also can build `bore` from source using [Cargo](https://doc.rust-lang.org/cargo/), the Rust package manager. This command installs the `bore` binary at a user-accessible path.

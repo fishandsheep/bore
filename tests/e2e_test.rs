@@ -1,19 +1,17 @@
 use std::net::SocketAddr;
+use std::sync::LazyLock;
 use std::time::Duration;
 
 use anyhow::{anyhow, Result};
 use bore_cli::{client::Client, server::Server, shared::CONTROL_PORT};
-use lazy_static::lazy_static;
 use rstest::*;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::Mutex;
 use tokio::time;
 
-lazy_static! {
-    /// Guard to make sure that tests are run serially, not concurrently.
-    static ref SERIAL_GUARD: Mutex<()> = Mutex::new(());
-}
+/// Guard to make sure that tests are run serially, not concurrently.
+static SERIAL_GUARD: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 
 /// Spawn the server, giving some time for the control port TcpListener to start.
 async fn spawn_server(secret: Option<&str>) {

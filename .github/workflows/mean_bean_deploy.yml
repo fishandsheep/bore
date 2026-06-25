@@ -193,3 +193,55 @@ jobs:
           asset_path: ${{ env.BIN }}.zip
           asset_name: ${{ env.BIN }}-${{steps.tag.outputs.tag}}-${{ matrix.target }}.zip
           asset_content_type: application/zip
+
+  npm:
+    name: Publish npm packages
+    runs-on: ubuntu-latest
+    needs:
+      - macos
+      - linux
+      - windows
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Check versions
+        run: npm run npm:check
+
+      - name: Download release assets
+        run: |
+          mkdir -p npm-dist
+          gh release download "${GITHUB_REF_NAME}" \
+            --dir npm-dist \
+            --pattern "${{ env.BIN }}-${GITHUB_REF_NAME}-*.tar.gz" \
+            --pattern "${{ env.BIN }}-${GITHUB_REF_NAME}-*.zip"
+
+      - name: Prepare npm platform packages
+        run: node npm/scripts/prepare-platform-packages-from-assets.mjs npm-dist
+
+      - name: Dry-run pack npm packages
+        run: npm run npm:pack:dry-run
+
+      - name: Publish npm packages
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_NAME}" == *-* ]]; then
+            npm_tag=next
+          else
+            npm_tag=latest
+          fi
+
+          for package_dir in npm/bore-*; do
+            npm publish "$package_dir" --access public --tag "$npm_tag"
+          done
+
+          npm publish npm/bore --access public --tag "$npm_tag"

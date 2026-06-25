@@ -1,0 +1,25 @@
+{
+  "name": "@qinshower/bore-linux-arm-musleabi",
+  "version": "0.6.0",
+  "description": "The Linux arm musl EABI binary for bore.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ekzhang/bore.git"
+  },
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "arm"
+  ],
+  "bin": {
+    "bore": "bin/bore"
+  },
+  "files": [
+    "bin"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

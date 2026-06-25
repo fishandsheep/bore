@@ -1,0 +1,25 @@
+{
+  "name": "@qinshower/bore-win32-x64-msvc",
+  "version": "0.6.0",
+  "description": "The Windows x64 MSVC binary for bore.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ekzhang/bore.git"
+  },
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "bin": {
+    "bore": "bin/bore.exe"
+  },
+  "files": [
+    "bin"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}
