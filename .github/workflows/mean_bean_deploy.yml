@@ -103,15 +103,10 @@ jobs:
           draft: false
           prerelease: false
 
-      - uses: actions/upload-release-asset@v1
-        id: upload-release-asset
+      - name: Upload Release Asset
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ env.BIN }}.tar.gz
-          asset_name: ${{ env.BIN }}-${{steps.tag.outputs.tag}}-${{ matrix.target }}.tar.gz
-          asset_content_type: application/gzip
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${GITHUB_REF_NAME}" "${{ env.BIN }}.tar.gz#${{ env.BIN }}-${{ steps.tag.outputs.tag }}-${{ matrix.target }}.tar.gz" --clobber
 
   linux:
     runs-on: ubuntu-latest
@@ -155,15 +150,9 @@ jobs:
           prerelease: false
 
       - name: Upload Release Asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ env.BIN }}.tar.gz
-          asset_name: ${{ env.BIN }}-${{steps.tag.outputs.tag}}-${{ matrix.target }}.tar.gz
-          asset_content_type: application/gzip
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${GITHUB_REF_NAME}" "${{ env.BIN }}.tar.gz#${{ env.BIN }}-${{ steps.tag.outputs.tag }}-${{ matrix.target }}.tar.gz" --clobber
 
   windows:
     runs-on: windows-latest
@@ -205,15 +194,11 @@ jobs:
           # get draft releases from its API, so there's no point using it.
           draft: false
           prerelease: false
-      - uses: actions/upload-release-asset@v1
-        id: upload-release-asset
+      - name: Upload Release Asset
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ env.BIN }}.zip
-          asset_name: ${{ env.BIN }}-${{steps.tag.outputs.tag}}-${{ matrix.target }}.zip
-          asset_content_type: application/zip
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${GITHUB_REF_NAME}" "${{ env.BIN }}.zip#${{ env.BIN }}-${{ steps.tag.outputs.tag }}-${{ matrix.target }}.zip" --clobber
+        shell: bash
 
   npm:
     name: Publish npm packages
