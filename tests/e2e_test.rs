@@ -24,11 +24,35 @@ impl Drop for ServerGuard {
     }
 }
 
+async fn wait_for_control_port_closed() -> Result<()> {
+    for _ in 0..100 {
+        if TcpStream::connect(("localhost", CONTROL_PORT))
+            .await
+            .is_err()
+        {
+            return Ok(());
+        }
+        time::sleep(Duration::from_millis(10)).await;
+    }
+
+    Err(anyhow!("previous server did not release control port"))
+}
+
 /// Spawn the server and wait until the control port is accepting connections.
 async fn spawn_server(secret: Option<&str>) -> Result<ServerGuard> {
+    wait_for_control_port_closed().await?;
+
     let task = tokio::spawn(Server::new(1024..=65535, secret).listen());
 
     for _ in 0..50 {
+        if task.is_finished() {
+            return match task.await {
+                Ok(Ok(())) => Err(anyhow!("server exited before listening")),
+                Ok(Err(err)) => Err(err),
+                Err(err) => Err(err.into()),
+            };
+        }
+
         match TcpStream::connect(("localhost", CONTROL_PORT)).await {
             Ok(_) => return Ok(ServerGuard { task }),
             Err(_) => time::sleep(Duration::from_millis(10)).await,
