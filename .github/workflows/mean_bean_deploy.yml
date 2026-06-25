@@ -262,7 +262,7 @@ jobs:
           fi
 
           for package_dir in npm/bore-*; do
-            npm publish "$package_dir" --access public --tag "$npm_tag"
+            npm publish "./$package_dir" --access public --tag "$npm_tag"
           done
 
-          npm publish npm/bore --access public --tag "$npm_tag"
+          npm publish ./npm/bore --access public --tag "$npm_tag"
