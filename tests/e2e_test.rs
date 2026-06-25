@@ -8,15 +8,34 @@ use rstest::*;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::Mutex;
+use tokio::task::JoinHandle;
 use tokio::time;
 
 /// Guard to make sure that tests are run serially, not concurrently.
 static SERIAL_GUARD: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 
-/// Spawn the server, giving some time for the control port TcpListener to start.
-async fn spawn_server(secret: Option<&str>) {
-    tokio::spawn(Server::new(1024..=65535, secret).listen());
-    time::sleep(Duration::from_millis(50)).await;
+struct ServerGuard {
+    task: JoinHandle<Result<()>>,
+}
+
+impl Drop for ServerGuard {
+    fn drop(&mut self) {
+        self.task.abort();
+    }
+}
+
+/// Spawn the server and wait until the control port is accepting connections.
+async fn spawn_server(secret: Option<&str>) -> Result<ServerGuard> {
+    let task = tokio::spawn(Server::new(1024..=65535, secret).listen());
+
+    for _ in 0..50 {
+        match TcpStream::connect(("localhost", CONTROL_PORT)).await {
+            Ok(_) => return Ok(ServerGuard { task }),
+            Err(_) => time::sleep(Duration::from_millis(10)).await,
+        }
+    }
+
+    Err(anyhow!("server did not start listening on control port"))
 }
 
 /// Spawns a client with randomly assigned ports, returning the listener and remote address.
@@ -34,7 +53,7 @@ async fn spawn_client(secret: Option<&str>) -> Result<(TcpListener, SocketAddr)>
 async fn basic_proxy(#[values(None, Some(""), Some("abc"))] secret: Option<&str>) -> Result<()> {
     let _guard = SERIAL_GUARD.lock().await;
 
-    spawn_server(secret).await;
+    let _server = spawn_server(secret).await?;
     let (listener, addr) = spawn_client(secret).await?;
 
     tokio::spawn(async move {
@@ -74,7 +93,9 @@ async fn mismatched_secret(
 ) {
     let _guard = SERIAL_GUARD.lock().await;
 
-    spawn_server(server_secret).await;
+    let _server = spawn_server(server_secret)
+        .await
+        .expect("server should start");
     assert!(spawn_client(client_secret).await.is_err());
 }
 
@@ -102,7 +123,7 @@ async fn invalid_address() -> Result<()> {
 async fn very_long_frame() -> Result<()> {
     let _guard = SERIAL_GUARD.lock().await;
 
-    spawn_server(None).await;
+    let _server = spawn_server(None).await?;
     let mut attacker = TcpStream::connect(("localhost", CONTROL_PORT)).await?;
 
     // Slowly send a very long frame.
@@ -129,7 +150,7 @@ async fn half_closed_tcp_stream() -> Result<()> {
     // Check that "half-closed" TCP streams will not result in spontaneous hangups.
     let _guard = SERIAL_GUARD.lock().await;
 
-    spawn_server(None).await;
+    let _server = spawn_server(None).await?;
     let (listener, addr) = spawn_client(None).await?;
 
     let (mut cli, (mut srv, _)) = tokio::try_join!(TcpStream::connect(addr), listener.accept())?;
