@@ -5,7 +5,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ekzhang/bore.git"
+    "url": "git+https://github.com/fishandsheep/bore.git"
   },
   "os": [
     "linux"

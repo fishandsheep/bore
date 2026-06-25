@@ -5,11 +5,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ekzhang/bore.git"
+    "url": "git+https://github.com/fishandsheep/bore.git"
   },
-  "homepage": "https://github.com/ekzhang/bore",
+  "homepage": "https://github.com/fishandsheep/bore",
   "bugs": {
-    "url": "https://github.com/ekzhang/bore/issues"
+    "url": "https://github.com/fishandsheep/bore/issues"
   },
   "bin": {
     "bore": "bin/bore.js"
