@@ -1,6 +1,6 @@
 {
   "name": "@qinshower/bore-linux-x64-musl",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "The Linux x64 musl binary for bore.",
   "license": "MIT",
   "repository": {

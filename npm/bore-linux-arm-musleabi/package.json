@@ -1,6 +1,6 @@
 {
   "name": "@qinshower/bore-linux-arm-musleabi",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "The Linux arm musl EABI binary for bore.",
   "license": "MIT",
   "repository": {

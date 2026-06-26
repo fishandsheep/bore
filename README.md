@@ -29,7 +29,14 @@ bunx @qinshower/bore local 8000 --to bore.pub
 指定版本：
 
 ```sh
-npx @qinshower/bore@0.6.1 --help
+npx @qinshower/bore@0.6.2 --help
+```
+
+注意：`npx` 遇到以 `-` 开头的参数时，可能会先被自己吃掉。启动 Web 管理台请用下面两种形式之一：
+
+```sh
+npx @qinshower/bore web
+npx @qinshower/bore -- -w
 ```
 
 ### Cargo
@@ -75,6 +82,7 @@ bore local 8080 --local-host 192.168.1.10 --to bore.pub
 ```sh
 bore --web
 bore -w
+bore web
 ```
 
 默认监听地址：
@@ -87,6 +95,8 @@ bore -w
 
 ```sh
 bore --web --web-addr 127.0.0.1:9000
+bore web --web-addr 127.0.0.1:9000
+npx @qinshower/bore web --web-addr 127.0.0.1:9000
 ```
 
 一期支持：

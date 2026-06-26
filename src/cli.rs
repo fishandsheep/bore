@@ -4,7 +4,7 @@ use std::future::pending;
 use std::net::{IpAddr, SocketAddr};
 
 use anyhow::Result;
-use clap::{error::ErrorKind, CommandFactory, Parser, Subcommand};
+use clap::{error::ErrorKind, ArgAction, CommandFactory, Parser, Subcommand};
 
 use crate::{
     client::{run_local, LocalArgs},
@@ -14,8 +14,18 @@ use crate::{
 
 /// Top-level CLI arguments.
 #[derive(Parser, Debug)]
-#[command(author, version, about)]
+#[command(
+    author,
+    version,
+    about,
+    disable_version_flag = true,
+    after_help = "Examples:\n  bore local 8000 --to bore.pub\n  bore -w\n  bore web --web-addr 127.0.0.1:9000\n  npx @qinshower/bore web\n  npx @qinshower/bore -- -w"
+)]
 pub struct Args {
+    /// Prints version information.
+    #[arg(short = 'v', long = "version", action = ArgAction::Version)]
+    pub version: Option<bool>,
+
     /// Starts the local web console.
     #[arg(short = 'w', long = "web")]
     pub web: bool,
@@ -34,8 +44,19 @@ pub enum Command {
     /// Starts a local proxy to the remote server.
     Local(LocalArgs),
 
+    /// Starts the local web console. Prefer this form for `npx`.
+    Web(WebArgs),
+
     /// Runs the remote proxy server.
     Server(ServerArgs),
+}
+
+/// Web console CLI arguments.
+#[derive(clap::Args, Debug, Clone)]
+pub struct WebArgs {
+    /// Address for the local web console.
+    #[arg(long = "web-addr", default_value = "127.0.0.1:7836")]
+    pub web_addr: SocketAddr,
 }
 
 /// Server CLI arguments.
@@ -87,6 +108,9 @@ pub async fn run(args: Args) -> Result<()> {
         Some(Command::Local(local_args)) => {
             run_local(local_args, pending::<()>(), None).await?;
         }
+        Some(Command::Web(web_args)) => {
+            web::serve(web_args.web_addr).await?;
+        }
         Some(Command::Server(server_args)) => {
             let port_range = server_args.min_port..=server_args.max_port;
             if port_range.is_empty() {
@@ -106,7 +130,7 @@ pub async fn run(args: Args) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use clap::Parser;
+    use clap::{CommandFactory, Parser};
 
     use super::Args;
 
@@ -140,10 +164,32 @@ mod tests {
     }
 
     #[test]
+    fn parse_web_subcommand() {
+        let args = Args::try_parse_from(["bore", "web", "--web-addr", "127.0.0.1:9000"])
+            .expect("parse should succeed");
+        assert!(!args.web);
+        assert!(matches!(args.command, Some(super::Command::Web(_))));
+    }
+
+    #[test]
     fn parse_existing_server_command() {
         let args = Args::try_parse_from(["bore", "server", "--bind-addr", "0.0.0.0"])
             .expect("parse should succeed");
         assert!(!args.web);
         assert!(args.command.is_some());
+    }
+
+    #[test]
+    fn parse_version_short_flag() {
+        let err = Args::try_parse_from(["bore", "-v"]).expect_err("version should exit");
+        assert_eq!(err.kind(), clap::error::ErrorKind::DisplayVersion);
+    }
+
+    #[test]
+    fn help_mentions_web_and_npx_usage() {
+        let help = Args::command().render_long_help().to_string();
+        assert!(help.contains("-w, --web"));
+        assert!(help.contains("bore web --web-addr 127.0.0.1:9000"));
+        assert!(help.contains("npx @qinshower/bore -- -w"));
     }
 }

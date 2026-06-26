@@ -29,7 +29,14 @@ bunx @qinshower/bore local 8000 --to bore.pub
 Pinned versions are supported:
 
 ```sh
-npx @qinshower/bore@0.6.1 --help
+npx @qinshower/bore@0.6.2 --help
+```
+
+Note: `npx` may consume leading `-` flags before they reach `bore`. Start the web console with one of these forms:
+
+```sh
+npx @qinshower/bore web
+npx @qinshower/bore -- -w
 ```
 
 ### Cargo
@@ -75,6 +82,7 @@ Start the local web console:
 ```sh
 bore --web
 bore -w
+bore web
 ```
 
 Default listen address:
@@ -87,6 +95,8 @@ Use a custom listen address:
 
 ```sh
 bore --web --web-addr 127.0.0.1:9000
+bore web --web-addr 127.0.0.1:9000
+npx @qinshower/bore web --web-addr 127.0.0.1:9000
 ```
 
 This first version can:
