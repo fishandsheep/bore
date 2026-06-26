@@ -10,7 +10,7 @@ bunx @qinshower/bore local 8000 --to bore.pub
 可通过 npm semver 指定版本。
 
 ```sh
-npx @qinshower/bore@0.6.0 --help
+npx @qinshower/bore@0.6.1 --help
 ```
 
 更多用法见主仓库文档：https://github.com/fishandsheep/bore

@@ -1,6 +1,6 @@
 {
   "name": "@qinshower/bore-win32-x64-msvc",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "The Windows x64 MSVC binary for bore.",
   "license": "MIT",
   "repository": {

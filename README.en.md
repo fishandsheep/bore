@@ -29,7 +29,7 @@ bunx @qinshower/bore local 8000 --to bore.pub
 Pinned versions are supported:
 
 ```sh
-npx @qinshower/bore@0.6.0 --help
+npx @qinshower/bore@0.6.1 --help
 ```
 
 ### Cargo

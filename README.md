@@ -29,7 +29,7 @@ bunx @qinshower/bore local 8000 --to bore.pub
 指定版本：
 
 ```sh
-npx @qinshower/bore@0.6.0 --help
+npx @qinshower/bore@0.6.1 --help
 ```
 
 ### Cargo
