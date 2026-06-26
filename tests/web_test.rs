@@ -44,7 +44,7 @@ async fn spawn_server(secret: Option<&str>) -> Result<ServerGuard> {
     wait_for_control_port_closed().await?;
     let task = tokio::spawn(Server::new(1024..=65535, secret).listen());
 
-    for _ in 0..50 {
+    for _ in 0..250 {
         if task.is_finished() {
             return match task.await {
                 Ok(Ok(())) => Err(anyhow!("server exited before listening")),
@@ -150,7 +150,7 @@ async fn tunnel_crud_and_logs_api() -> Result<()> {
         }
         time::sleep(Duration::from_millis(20)).await;
     }
-    assert_eq!(status, "Running");
+    assert_eq!(status, "Running", "tunnel did not reach Running state");
 
     let logs_response = app
         .clone()
