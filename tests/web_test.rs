@@ -133,7 +133,7 @@ async fn tunnel_crud_and_logs_api() -> Result<()> {
     assert_eq!(start_response.status(), StatusCode::OK);
 
     let mut status = String::new();
-    for _ in 0..50 {
+    for _ in 0..250 {
         let response = app
             .clone()
             .oneshot(

@@ -215,8 +215,24 @@ jobs:
             npm_tag=latest
           fi
 
+          publish_if_missing() {
+            local package_dir="$1"
+            local package_name
+            local package_version
+
+            package_name="$(node -p "require('./${package_dir}/package.json').name")"
+            package_version="$(node -p "require('./${package_dir}/package.json').version")"
+
+            if npm view "${package_name}@${package_version}" version >/dev/null 2>&1; then
+              echo "Skipping ${package_name}@${package_version}; already published"
+              return 0
+            fi
+
+            npm publish "./${package_dir}" --access public --tag "$npm_tag"
+          }
+
           for package_dir in npm/bore-*; do
-            npm publish "./$package_dir" --access public --tag "$npm_tag"
+            publish_if_missing "$package_dir"
           done
 
-          npm publish ./npm/bore --access public --tag "$npm_tag"
+          publish_if_missing "npm/bore"
