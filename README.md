@@ -99,6 +99,20 @@ bore web --web-addr 127.0.0.1:9000
 npx @qinshower/bore web --web-addr 127.0.0.1:9000
 ```
 
+如果把本地 Web 管理台绑定到非 loopback 地址，启动时会打印安全警告，因为浏览器访问没有认证。
+
+通过远端 server 公开 Web 管理台：
+
+```sh
+bore web --remote --to your-server.com --port 7836 --secret xxx
+```
+
+启动 `home` 组合模式，同时公开 Web 管理台和 SSH：
+
+```sh
+bore home --to your-server.com --secret xxx
+```
+
 一期支持：
 
 - 创建 `local` 隧道配置
@@ -114,7 +128,7 @@ npx @qinshower/bore web --web-addr 127.0.0.1:9000
 - 删除操作使用统一确认对话框
 - 单条隧道动作会进入 busy 状态，避免重复点击和并发提交
 
-注意：当前版本没有登录和认证。如果显式绑定到非 loopback 地址，启动时会打印安全警告。
+注意：当前版本没有 Web 登录和认证。`bore web --remote` / `bore home` 只保护 client/server 建 tunnel，不保护浏览器访问；任何能访问远端 `server:<web-port>` 的人都能控制本机 loopback tunnels。远端模式和 `home` 模式会强制 Web 本地监听与用户创建的 tunnel 目标都保持在 loopback；纯本地 Web 模式仍允许绑定非 loopback，但只会给出启动警告。
 
 ## 自托管
 

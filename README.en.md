@@ -99,6 +99,20 @@ bore web --web-addr 127.0.0.1:9000
 npx @qinshower/bore web --web-addr 127.0.0.1:9000
 ```
 
+Binding the local web console to a non-loopback address prints a startup warning because browser access is unauthenticated.
+
+Expose the web console through your own server:
+
+```sh
+bore web --remote --to your-server.com --port 7836 --secret xxx
+```
+
+Start home mode with both remote web and SSH system tunnels:
+
+```sh
+bore home --to your-server.com --secret xxx
+```
+
 This first version can:
 
 - Create `local` tunnel configs
@@ -114,7 +128,7 @@ Current interaction details:
 - Delete uses a consistent confirmation dialog
 - Per-tunnel actions enter a busy state to prevent duplicate clicks and concurrent requests
 
-Warning: this version has no login or authentication. Binding to a non-loopback address prints a security warning at startup.
+Warning: this version has no web login or browser auth. `bore web --remote` and `bore home` protect only client/server tunnel setup, not browser access. Anyone who can reach remote `server:<web-port>` can control local loopback tunnels on this machine. Remote web and home modes force both the local web bind and user-created tunnel targets to stay on loopback, while plain local web mode still allows non-loopback binding with only a startup warning.
 
 ## Self-hosting
 

@@ -36,6 +36,7 @@ const timestampFormatter = new Intl.DateTimeFormat(LOCALE, {
 });
 
 const state = {
+  session: null,
   expandedLogs: new Set(),
   tunnels: [],
   pollingTimer: null,
@@ -59,11 +60,14 @@ const formMessage = document.getElementById("form-message");
 const refreshBtn = document.getElementById("refresh-btn");
 const consoleAddr = document.getElementById("console-addr");
 const tunnelSummary = document.getElementById("tunnel-summary");
+const sessionBanner = document.getElementById("session-banner");
+const sessionMode = document.getElementById("session-mode");
+const sessionRemoteWeb = document.getElementById("session-remote-web");
+const sessionRemoteSsh = document.getElementById("session-remote-ssh");
+const sessionWarnings = document.getElementById("session-warnings");
 const deleteDialog = document.getElementById("delete-dialog");
 const deleteDialogTitle = document.getElementById("delete-dialog-title");
 const deleteDialogBody = document.getElementById("delete-dialog-body");
-
-consoleAddr.textContent = `Listening on ${window.location.origin}`;
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -167,6 +171,7 @@ function resetFormState() {
   form.reset();
   form.elements.to.value = DEFAULT_REMOTE;
   form.elements.local_host.value = DEFAULT_HOST;
+  form.elements.local_host.readOnly = Boolean(state.session?.loopback_only);
 }
 
 function setFormBusy(isBusy) {
@@ -208,6 +213,10 @@ function beginEditTunnel(id) {
   if (!tunnel) {
     return;
   }
+  if (tunnel.locked) {
+    setFormMessage("System tunnel is locked.", "error");
+    return;
+  }
   if (tunnel.status === "Starting" || tunnel.status === "Running") {
     setFormMessage("Stop the tunnel before editing it.", "error");
     return;
@@ -233,6 +242,41 @@ function beginEditTunnel(id) {
     behavior: prefersReducedMotion() ? "auto" : "smooth",
     block: "start",
   });
+}
+
+async function syncSession() {
+  state.session = await api("/api/session");
+  applySession(state.session);
+  resetFormState();
+}
+
+function applySession(session) {
+  consoleAddr.textContent = `Listening on ${window.location.origin}`;
+  if (!session || session.mode === "Local") {
+    sessionBanner.hidden = true;
+    return;
+  }
+
+  sessionBanner.hidden = false;
+  sessionMode.textContent =
+    session.mode === "Home"
+      ? "Remote home mode. Public web + SSH system tunnels stay locked."
+      : "Remote web mode. Public web system tunnel stays locked.";
+  sessionRemoteWeb.textContent = session.web_remote_url
+    ? `Remote web: ${session.web_remote_url}`
+    : "";
+  sessionRemoteWeb.hidden = !session.web_remote_url;
+  sessionRemoteSsh.textContent = session.ssh_remote_endpoint
+    ? `Remote SSH: ${session.ssh_remote_endpoint}`
+    : "";
+  sessionRemoteSsh.hidden = !session.ssh_remote_endpoint;
+  sessionWarnings.replaceChildren(
+    ...((session.warnings || []).map((warning) => {
+      const item = document.createElement("li");
+      item.textContent = warning;
+      return item;
+    })),
+  );
 }
 
 async function api(path, options = {}) {
@@ -445,8 +489,14 @@ function createTunnelCard(id) {
   const titleWrap = document.createElement("div");
   titleWrap.className = "card-title";
 
+  const titleRow = document.createElement("div");
+  titleRow.className = "card-title-row";
+
   const name = document.createElement("h3");
   name.className = "card-name";
+
+  const badges = document.createElement("div");
+  badges.className = "card-badges";
 
   const route = document.createElement("p");
   route.className = "route";
@@ -454,7 +504,8 @@ function createTunnelCard(id) {
   const status = document.createElement("span");
   status.className = "status";
 
-  titleWrap.append(name, route);
+  titleRow.append(name, badges);
+  titleWrap.append(titleRow, route);
   cardHead.append(titleWrap, status);
 
   const metaList = document.createElement("dl");
@@ -500,6 +551,7 @@ function createTunnelCard(id) {
   article.append(cardHead, metaList, error, cardActions, logs);
   article._refs = {
     name,
+    badges,
     route,
     status,
     metaRequested: metaRequested.value,
@@ -598,20 +650,23 @@ function patchTunnelCard(card, tunnel) {
   const statusClass = tunnel.status.toLowerCase();
   const statusLabel = getStatusLabel(tunnel.status);
   const canStart = tunnel.status === "Stopped" || tunnel.status === "Failed";
-  const canStop = tunnel.status === "Starting" || tunnel.status === "Running";
-  const canDelete = tunnel.status === "Stopped" || tunnel.status === "Failed";
-  const canEdit = tunnel.status === "Stopped" || tunnel.status === "Failed";
+  const canStop = !tunnel.locked && (tunnel.status === "Starting" || tunnel.status === "Running");
+  const canDelete = !tunnel.locked && (tunnel.status === "Stopped" || tunnel.status === "Failed");
+  const canEdit = !tunnel.locked && (tunnel.status === "Stopped" || tunnel.status === "Failed");
   const logsExpanded = state.expandedLogs.has(tunnel.id);
   const visiblePort = tunnel.remote_port ?? tunnel.config.port ?? COPY.autoPort;
   const remoteLabel = `${tunnel.config.to}:${visiblePort}`;
-  const remoteUrl = tunnel.remote_port ? `http://${tunnel.config.to}:${tunnel.remote_port}` : null;
+  const remoteUrl = tunnel.display_url || (tunnel.remote_port ? `http://${tunnel.config.to}:${tunnel.remote_port}` : null);
   const busyAction = state.busyTunnelActions.get(tunnel.id) || null;
   const isBusy = Boolean(busyAction);
 
   refs.name.textContent = tunnel.config.name;
+  refs.badges.replaceChildren(...buildBadges(tunnel));
   refs.route.replaceChildren(
     document.createTextNode(`${tunnel.config.local_host}:${tunnel.config.local_port} → `),
-    remoteUrl ? createRemoteLink(remoteUrl, remoteLabel) : document.createTextNode(remoteLabel),
+    remoteUrl && /^https?:\/\//.test(remoteUrl)
+      ? createRemoteLink(remoteUrl, remoteLabel)
+      : document.createTextNode(remoteUrl || remoteLabel),
   );
 
   refs.status.className = `status ${statusClass}`;
@@ -642,6 +697,30 @@ function patchTunnelCard(card, tunnel) {
   if (logsExpanded && !refs.logsPre.textContent) {
     refs.logsPre.textContent = COPY.loadingLogs;
   }
+}
+
+function buildBadges(tunnel) {
+  const badges = [];
+  if (tunnel.kind === "System") {
+    badges.push(createBadge("System", "system"));
+    if (tunnel.config.name === "Web Console") {
+      badges.push(createBadge("Web Console"));
+    }
+    if (tunnel.config.name === "SSH") {
+      badges.push(createBadge("SSH"));
+    }
+  }
+  if (tunnel.locked) {
+    badges.push(createBadge("Locked"));
+  }
+  return badges;
+}
+
+function createBadge(label, className = "") {
+  const badge = document.createElement("span");
+  badge.className = `status-badge ${className}`.trim();
+  badge.textContent = label;
+  return badge;
 }
 
 function createRemoteLink(url, label) {
@@ -778,4 +857,9 @@ function createEmptyState(title, body) {
 
 resetFormState();
 setListFeedback(COPY.loadingTunnels);
-syncState().catch(showListError);
+init().catch(showListError);
+
+async function init() {
+  await syncSession();
+  await syncState();
+}

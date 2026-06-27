@@ -9,10 +9,11 @@ use axum::{
 };
 use serde::Serialize;
 
-use super::state::{StateError, TunnelConfig, TunnelInfo, WebState};
+use super::state::{SessionInfo, StateError, TunnelConfig, TunnelInfo, WebState};
 
 pub fn router() -> Router<WebState> {
     Router::new()
+        .route("/session", get(get_session))
         .route("/tunnels", get(list_tunnels).post(create_tunnel))
         .route("/tunnels/:id", put(update_tunnel).delete(delete_tunnel))
         .route("/tunnels/:id/start", post(start_tunnel))
@@ -38,6 +39,10 @@ struct ErrorResponse {
 #[derive(Debug, Serialize)]
 struct LogsResponse {
     logs: Vec<String>,
+}
+
+async fn get_session(State(state): State<WebState>) -> Json<SessionInfo> {
+    Json(state.session().await)
 }
 
 async fn list_tunnels(State(state): State<WebState>) -> Json<Vec<TunnelInfo>> {
