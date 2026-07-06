@@ -210,7 +210,7 @@ jobs:
 
       - name: Prepare npm packages
         shell: bash
-        run: node npm/scripts/prepare-platform-packages-from-assets.mjs npm-dist
+        run: node npm/scripts/prepare-platform-packages-from-assets.mjs npm-dist "${{ matrix.package-dir }}"
 
       - name: Pack and run CLI through npx
         shell: bash

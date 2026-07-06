@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
 const assetDir = process.argv[2] || join(root, "npm-dist");
+const requestedPackageDirs = new Set(process.argv.slice(3));
 const tag = process.env.GITHUB_REF_NAME || process.env.TAG_NAME;
 
 if (!tag) {
@@ -34,6 +35,10 @@ function run(command, args) {
 }
 
 for (const [target, packageDir, extension, executable] of assets) {
+  if (requestedPackageDirs.size > 0 && !requestedPackageDirs.has(packageDir)) {
+    continue;
+  }
+
   const asset = join(assetDir, `bore-${tag}-${target}.${extension}`);
   if (!existsSync(asset)) {
     throw new Error(`Missing release asset: ${asset}`);
