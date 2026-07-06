@@ -1,6 +1,6 @@
 {
   "name": "@qinshower/bore-linux-armv7-musleabihf",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "The Linux armv7 musl EABI hard-float binary for bore.",
   "license": "MIT",
   "repository": {
@@ -13,9 +13,6 @@
   "cpu": [
     "arm"
   ],
-  "bin": {
-    "bore": "bin/bore"
-  },
   "files": [
     "bin"
   ],

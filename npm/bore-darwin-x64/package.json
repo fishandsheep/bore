@@ -1,6 +1,6 @@
 {
   "name": "@qinshower/bore-darwin-x64",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "The macOS x64 binary for bore.",
   "license": "MIT",
   "repository": {
@@ -13,9 +13,6 @@
   "cpu": [
     "x64"
   ],
-  "bin": {
-    "bore": "bin/bore"
-  },
   "files": [
     "bin"
   ],

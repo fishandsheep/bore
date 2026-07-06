@@ -1,6 +1,6 @@
 {
   "name": "@qinshower/bore-win32-ia32-msvc",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "The Windows ia32 MSVC binary for bore.",
   "license": "MIT",
   "repository": {
@@ -13,9 +13,6 @@
   "cpu": [
     "ia32"
   ],
-  "bin": {
-    "bore": "bin/bore.exe"
-  },
   "files": [
     "bin"
   ],
