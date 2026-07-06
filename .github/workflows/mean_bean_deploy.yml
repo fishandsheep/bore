@@ -209,6 +209,7 @@ jobs:
             --pattern "${{ env.BIN }}-${GITHUB_REF_NAME}-*.zip"
 
       - name: Prepare npm packages
+        shell: bash
         run: node npm/scripts/prepare-platform-packages-from-assets.mjs npm-dist
 
       - name: Pack and run CLI through npx

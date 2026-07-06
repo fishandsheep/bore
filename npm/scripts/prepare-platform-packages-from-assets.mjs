@@ -2,8 +2,9 @@ import { chmodSync, copyFileSync, existsSync, mkdirSync, rmSync } from "node:fs"
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
+import { fileURLToPath } from "node:url";
 
-const root = new URL("../..", import.meta.url).pathname;
+const root = fileURLToPath(new URL("../..", import.meta.url));
 const assetDir = process.argv[2] || join(root, "npm-dist");
 const tag = process.env.GITHUB_REF_NAME || process.env.TAG_NAME;
 
