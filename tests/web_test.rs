@@ -16,7 +16,7 @@ use bore_cli::{
 };
 use serde_json::{json, Value};
 use tokio::{
-    net::TcpStream,
+    net::{TcpListener, TcpStream},
     sync::{oneshot, Mutex},
     task::JoinHandle,
     time,
@@ -360,6 +360,56 @@ async fn managed_remote_web_starts_and_stops_system_tunnel() -> Result<()> {
 
     let tunnels = state.list_tunnels().await;
     assert_eq!(tunnels[0].status, bore_cli::web::TunnelStatus::Stopped);
+    Ok(())
+}
+
+#[tokio::test]
+async fn managed_remote_web_uses_fallback_web_port_for_system_tunnel() -> Result<()> {
+    let _guard = SERIAL_GUARD.lock().await;
+    let _server = spawn_server(None).await?;
+    let occupied = TcpListener::bind("127.0.0.1:0").await?;
+    let occupied_addr = occupied.local_addr()?;
+    let state = WebState::new(remote_session(SessionMode::RemoteWeb));
+    let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
+
+    let task = tokio::spawn(run_managed(
+        ServeConfig {
+            addr: occupied_addr,
+            session: state.session().await,
+        },
+        state.clone(),
+        vec![SystemTunnelSpec {
+            role: SystemTunnelRole::WebConsole,
+            config: TunnelConfig {
+                name: "Web Console".to_string(),
+                local_port: occupied_addr.port(),
+                to: "localhost".to_string(),
+                port: Some(7836),
+                local_host: "127.0.0.1".to_string(),
+                secret: None,
+            },
+            display_url: Some("http://localhost:7836".to_string()),
+        }],
+        async move {
+            let _ = shutdown_rx.await;
+        },
+    ));
+
+    let mut saw_running = false;
+    for _ in 0..250 {
+        let tunnels = state.list_tunnels().await;
+        if tunnels.len() == 1 && tunnels[0].status == bore_cli::web::TunnelStatus::Running {
+            assert_ne!(tunnels[0].config.local_port, occupied_addr.port());
+            assert_ne!(tunnels[0].config.local_port, 0);
+            saw_running = true;
+            break;
+        }
+        time::sleep(Duration::from_millis(20)).await;
+    }
+    assert!(saw_running, "system tunnel should start on fallback port");
+
+    let _ = shutdown_tx.send(());
+    task.await??;
     Ok(())
 }
 
